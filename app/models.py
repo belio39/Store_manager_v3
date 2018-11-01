@@ -137,8 +137,4 @@ class Sales():
     self.cursor.execute(sql, (attendant, office, price))
     CONNECTION.commit()
 
-
-
-
-
-  
+    
