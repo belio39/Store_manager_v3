@@ -135,4 +135,10 @@ class Sales():
     """Edit a sale"""
     sql = 'UPDATE sales SET attendant=%s, office=%s, price=%s WHERE id=%s;'
     self.cursor.execute(sql, (attendant, office, price))
-    CONNECTION.commit()  
+    CONNECTION.commit()
+
+
+
+
+
+  
