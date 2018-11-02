@@ -8,7 +8,7 @@ from flask_jwt import JWT
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
 from app import CONNECTION, APP
-from app.models import Users
+from app.models import Users, Products
 
 cursor = CONNECTION.cursor()
 
@@ -47,7 +47,7 @@ def register_user():
   return abort(400), 400
 
 @APP.route('/api/v2/auth/login', methods=['POST'])
-def login():
+def login_user():
     email = request.json.get('email')
     password = request.json.get('password')
     if not email or not password:
@@ -63,5 +63,150 @@ def login():
         return jsonify({"message": "invalid  credentials"}), 400
     return jsonify({"message": "invalid  credentials"}), 400
 
+@APP.route('/api/v2/products', methods=['POST'])
+@jwt_required
+def post_product():
+    data = request.json.get
+    name = data('name')
+    quantity = data('quantity')
+    price = data('price')
+    date = dt.now()
+    if not request.json:
+        return jsonify({'message': 'Data must be in jsonify'}), 400
+    if not name or not quantity or not price:
+        return jsonify({'message': 'Name, quantity and price should not be empty.'}), 400
+    if not name.isalnum():
+        return jsonify({'message': 'Name contains only numbers'}), 400
+    if not quantity.isnumeric():
+        return jsonify({'message': 'Quantity contains only numbers'}), 400
+    if not price.isnumeric():
+        return jsonify({'message': 'Price contains only numbers'}), 400
+    if not name.isalnum():
+        return jsonify({'message': 'Name contains only alphabets or numbers'}), 400
+    sql = 'SELECT * FROM products WHERE name=%s;'
+    cursor.execute(sql, ([name]))
+    existing = cursor.fetchall()
+    if not existing:
+        sql = 'INSERT INTO products(name, quantity, price, created_on) VALUES(%s, %s, %s, %s);'
+        cursor.execute(sql, (name, quantity, price, date))
+        CONNECTION.commit()
+        return jsonify({"message":"product created successfully"}), 201
+    return jsonify({"message": "That product already exists"})
 
-      
+@APP.route('/api/v2/products/<int:product_id>', methods=['PUT'])
+@jwt_required
+def edit_product(product_id):
+    data = request.json.get
+    name = data('name')
+    quantity = data('quantity')
+    price = data('price')
+    if not request.json:
+        return jsonify({'message': 'Data must be in jsonify'}), 400
+    if not name or not quantity or not price:
+        return jsonify({'message': 'Name, quantity and price should not be empty.'}), 400
+    if not name.isalnum():
+        return jsonify({'message': 'Name contains only numbers'}), 400
+    if not quantity.isnumeric():
+        return jsonify({'message': 'Quantity contains only numbers'}), 400
+    if not price.isnumeric():
+        return jsonify({'message': 'Price contains only numbers'}), 400
+    if not name.isalnum():
+        return jsonify({'message': 'Name contains only alphabets or numbers'}), 400
+    sql = 'UPDATE products SET name=%s, price=%s, quantity=%s WHERE product_id=%s;'
+    cursor.execute(sql, (name, price, quantity, product_id))
+    CONNECTION.commit()
+    return jsonify({"message":"Product updated successfully"}), 201
+
+@APP.route('/api/v2/products/', methods=['GET'])
+@jwt_required
+def get_products():
+    sql = 'SELECT * FROM products ORDER BY product_id;'
+    cursor.execute(sql)
+    products = cursor.fetchall()
+    return jsonify({"products": products})
+
+
+@APP.route('/api/v2/products/<int:product_id>', methods=['GET'])
+@jwt_required
+def get_product(product_id):
+    sql = 'SELECT * FROM products WHERE product_id=%s;'
+    cursor.execute(sql, ([product_id]))
+    product = cursor.fetchall()
+    return jsonify({"products": product})
+
+@APP.route('/api/v2/products/<int:product_id>', methods=['DELETE'])
+@jwt_required
+def delete_products(product_id):
+    sql = 'DELETE FROM products WHERE product_id=%s;'
+    cursor.execute(sql, [product_id])
+    CONNECTION.commit()
+    return jsonify({"message":"Successfully deleted product"})
+
+@APP.route('/api/v2/sales', methods=['POST'])
+@jwt_required
+def create_sales():
+    data = request.json.get
+    attendant = data('attendant')
+    office = data('office')
+    price = data('price')
+    date = dt.now()
+    if not attendant or not office or not price:
+        return jsonify({'message': 'Attendant, office and price should not be empty. '}), 400
+    if not attendant.isalnum():
+        return jsonify({'message': 'attendant contains only alphabets or numbers'}), 400
+    sql = 'SELECT * FROM sales WHERE attendant=%s;'
+    cursor.execute(sql, ([attendant]))
+    existing = cursor.fetchall()
+    if not existing:
+        sql = 'INSERT INTO sales(attendant, office, price, created_on) VALUES(%s, %s, %s, %s);'
+        cursor.execute(sql, (attendant, office, price, date))
+        CONNECTION.commit()
+        return jsonify({"message":"sale created successfully"}), 201
+    return jsonify({"message": "That sale already exists"})    
+    
+
+@APP.route('/api/v2/sales/', methods=['GET'])
+@jwt_required
+def get_sales():
+    sql = 'SELECT * FROM sales ORDER BY sale_id;'
+    cursor.execute(sql)
+    sales = cursor.fetchall()
+    return jsonify({"sales": sales})
+
+@APP.route('/api/v2/sales/<int:sale_id>', methods=['GET'])
+@jwt_required
+def get_sale(sale_id):
+    sql = 'SELECT * FROM sales WHERE sale_id=%s;'
+    cursor.execute(sql, ([sale_id]))
+    sale = cursor.fetchall()
+    return jsonify({"sales": sale})
+
+@APP.route('/api/v2/sales/<int:sale_id>', methods=['DELETE'])
+@jwt_required
+def delete_sales(sale_id):
+    sql = 'DELETE FROM sales WHERE sale_id=%s;'
+    cursor.execute(sql, [sale_id])
+    CONNECTION.commit()
+    return jsonify({"message":"Successfully deleted sale"})
+
+@APP.route('/api/v2/sales/<int:sale_id>', methods=['PUT'])
+@jwt_required
+def edit_sale(sale_id):
+    data = request.json.get
+    attendant = data('attendant')
+    office = data('office')
+    price = data('price')
+    if not request.json:
+        return jsonify({'message': 'Data must be in jsonify'}), 400
+    if not attendant or not office or not price:
+        return jsonify({'message': 'Attendant, office and price should not be empty.'}), 400
+    if not attendant.isalnum():
+        return jsonify({'message': 'Attendant contains only alphabets or numbers'}), 400        
+    if not office.isalnum():
+        return jsonify({'message': 'Office contains alphabets or mixed with nunbers'}), 400
+    if not price.isnumeric():
+        return jsonify({'message': 'Price contains only numbers'}), 400
+    sql = 'UPDATE sales SET attendant=%s, office=%s, price=%s WHERE sale_id=%s;'
+    cursor.execute(sql, (attendant, office, price, sale_id))
+    CONNECTION.commit()
+    return jsonify({"message":"Sale updated successfully"}), 201

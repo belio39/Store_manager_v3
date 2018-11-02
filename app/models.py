@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash
 
 from app import CONNECTION
 class DatabaseDriver(object):
-  """Class methodd to create and drop tables"""
+  """Class method to create and drop tables"""
 
   def __init__(self):
     pass
@@ -24,17 +24,28 @@ class DatabaseDriver(object):
     );'
 
     products = 'CREATE TABLE IF NOT EXISTS products(\
+      product_id SERIAL PRIMARY KEY,\
       name varchar (32) NOT NULL, \
       quantity integer NOT NULL, \
       price money NOT NULL, \
       created_on TIMESTAMP NOT NULL \
     );'
+
+    sales = 'CREATE TABLE IF NOT EXISTS sales(\
+      sale_id SERIAL PRIMARY KEY,\
+      attendant varchar (32) NOT NULL, \
+      office varchar (32) NOT NULL, \
+      price money NOT NULL, \
+      created_on TIMESTAMP NOT NULL \
+    );'
+
     default_admin = """
       insert into users(username, email, password, created_on, isadmin) Values('Belio', 'rotich@gmail.com', %s, CURRENT_TIMESTAMP, TRUE);
     """
     cursor = CONNECTION.cursor()
     cursor.execute(users)
     cursor.execute(products)
+    cursor.execute(sales)
     cursor.execute(default_admin, [generate_password_hash('password'),])
     CONNECTION.commit()
     cursor.close()
@@ -69,7 +80,8 @@ class Users():
 
 class Products():
   """Products objects"""
-  def __init__(self, name, quantity, price):
+  def __init__(self, product_id, name, quantity, price):
+    self.product_id = product_id
     self.date = dt.now()
     self.cursor = CONNECTION.cursor()
     self.name = name
@@ -79,7 +91,7 @@ class Products():
   def save(self):
     """Post a product to Database"""
     sql = 'INSERT INT0 products(product, content, posted_on) VALUES (%s, %s, %s, %s);'
-    self.cursor.execute(sql, (self.name, self.quantity, self.price, self.date))
+    self.cursor.execute(sql, (self.product_id, self.name, self.quantity, self.price, self.date))
     CONNECTION.commit()
 
   def delete_product(self, product_id):
@@ -88,4 +100,40 @@ class Products():
     self.cursor.execute(sql, ([product_id]))
     sql = 'DELETE FROM products WHERE id=%s;'
     self.cursor.execute(sql, ([product_id]))
-    CONNECTION.commit()  
+    CONNECTION.commit()
+
+  def edit_product(self, name, quantity, price):
+    """Edit a product"""
+    sql = 'UPDATE products SET name=%s, quantity=%s, price=%s WHERE id=%s;'
+    self.cursor.execute(sql, (name, quantity, price))
+    CONNECTION.commit()
+
+class Sales():
+  def __init__(self, sale_id, attendant, office, price):
+    self.sale_id = sale_id
+    self.date = dt.now()
+    self.cursor = CONNECTION.cursor()
+    self.attendant = attendant
+    self.office = office
+    self.price = price
+
+  def save(self):
+    """Post a sale to Database"""
+    sql = 'INSERT INT0 sales(sale, content, posted_on) VALUES (%s, %s, %s, %s);'
+    self.cursor.execute(sql, (self.sale_id, self.attendant, self.office, self.price, self.date))
+    CONNECTION.commit()
+
+  def delete_sale(self, sale_id):
+    """Delete a sale"""    
+    sql = 'DELETE FROM sale WHERE sale_id=%s;'
+    self.cursor.execute(sql, ([sale_id]))
+    sql = 'DELETE FROM sales WHERE id=%s;'
+    self.cursor.execute(sql, ([sale_id]))
+    CONNECTION.commit()
+
+  def edit_sale(self, attendant, office, price):
+    """Edit a sale"""
+    sql = 'UPDATE sales SET attendant=%s, office=%s, price=%s WHERE id=%s;'
+    self.cursor.execute(sql, (attendant, office, price))
+    CONNECTION.commit()
+        
